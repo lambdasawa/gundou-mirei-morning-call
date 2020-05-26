@@ -1,0 +1,53 @@
+service:
+  name: gundou-mirei-morning-call
+
+plugins:
+  - serverless-webpack
+  - serverless-dotenv-plugin
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+  dotenv:
+    exclude:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  apiGateway:
+    minimumCompressionSize: 1024
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::"
+            - ${env:S3_BUCKET_NAME}
+            - "/*"
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+resources:
+  Resources:
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:S3_BUCKET_NAME}
+
+functions:
+  trigger:
+    handler: handler.trigger
+    events:
+      - schedule: rate(5 minutes)
+  voice-xml-generator:
+    handler: handler.voiceXMLGenerator
+    events:
+      - http:
+          method: post
+          path: /voice
