@@ -15,7 +15,8 @@ const config = {
   },
   twitcasting: {
     userId: process.env.TWITCASTING_USER_ID || "",
-    accessToken: process.env.TWITCASTING_ACCESS_TOKEN || "",
+    clientId: process.env.TWITCASTING_CLIETNT_ID || "",
+    clientSecret: process.env.TWITCASTING_CLIETNT_SECRET || "",
   },
   twilio: {
     accountSid: process.env.TWILIO_ACCOUNT_ID || "",
@@ -74,13 +75,17 @@ async function findCurrentTwitCastingLive(
 ): Promise<string | null> {
   console.log({ msg: "find current twitcas live", status: "start", userId });
 
+  const authorizationToken = Buffer.from(
+    [config.twitcasting.clientId, config.twitcasting.clientSecret].join(":")
+  ).toString("base64");
+
   const response = await Axios.default.get<any>(
     `https://apiv2.twitcasting.tv/users/${userId}/current_live`,
     {
       headers: {
         Accept: "application/json",
         "X-Api-Version": "2.0",
-        Authorization: `Bearer ${config.twitcasting.accessToken}`,
+        Authorization: `Basic ${authorizationToken}`,
       },
       validateStatus: (status) => {
         return status < 500;
